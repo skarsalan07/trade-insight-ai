@@ -1,6 +1,7 @@
 import { Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NewsCarousel } from "./NewsCarousel";
+import { StockChart } from "./StockChart";
 
 interface NewsItem {
   id: string;
@@ -13,6 +14,14 @@ interface NewsItem {
   url?: string;
 }
 
+interface ChartData {
+  ticker: string;
+  data: Array<{ time: string; value: number }>;
+  currentPrice: number;
+  change: number;
+  changePercent: number;
+}
+
 interface ChatMessageProps {
   role: "user" | "assistant";
   content?: string;
@@ -21,9 +30,10 @@ interface ChatMessageProps {
     ticker: string;
     items: NewsItem[];
   };
+  chart?: ChartData;
 }
 
-export function ChatMessage({ role, content, timestamp, news }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp, news, chart }: ChatMessageProps) {
   const isUser = role === "user";
 
   return (
@@ -53,6 +63,18 @@ export function ChatMessage({ role, content, timestamp, news }: ChatMessageProps
           </div>
         )}
         
+        {chart && !isUser && (
+          <div className="w-full max-w-3xl">
+            <StockChart
+              ticker={chart.ticker}
+              data={chart.data}
+              currentPrice={chart.currentPrice}
+              change={chart.change}
+              changePercent={chart.changePercent}
+            />
+          </div>
+        )}
+
         {news && !isUser && (
           <div className="w-full max-w-5xl">
             <NewsCarousel news={news.items} ticker={news.ticker} />

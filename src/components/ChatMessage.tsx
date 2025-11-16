@@ -1,13 +1,29 @@
 import { Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NewsCarousel } from "./NewsCarousel";
+
+interface NewsItem {
+  id: string;
+  title: string;
+  source: string;
+  timestamp: string;
+  sentiment: "positive" | "negative" | "neutral";
+  impact: "high" | "medium" | "low";
+  summary: string;
+  url?: string;
+}
 
 interface ChatMessageProps {
   role: "user" | "assistant";
-  content: string;
+  content?: string;
   timestamp?: string;
+  news?: {
+    ticker: string;
+    items: NewsItem[];
+  };
 }
 
-export function ChatMessage({ role, content, timestamp }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp, news }: ChatMessageProps) {
   const isUser = role === "user";
 
   return (
@@ -23,17 +39,26 @@ export function ChatMessage({ role, content, timestamp }: ChatMessageProps) {
         </div>
       )}
       
-      <div className={cn("flex flex-col gap-2 max-w-[80%]", isUser && "items-end")}>
-        <div
-          className={cn(
-            "rounded-2xl px-4 py-3 glass-effect shadow-lg",
-            isUser
-              ? "bg-primary/10 border-primary/20"
-              : "bg-card border-border/50"
-          )}
-        >
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
-        </div>
+      <div className={cn("flex flex-col gap-2", isUser ? "max-w-[80%] items-end" : "max-w-full")}>
+        {content && (
+          <div
+            className={cn(
+              "rounded-2xl px-4 py-3 glass-effect shadow-lg",
+              isUser
+                ? "bg-primary/10 border-primary/20"
+                : "bg-card border-border/50"
+            )}
+          >
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
+          </div>
+        )}
+        
+        {news && !isUser && (
+          <div className="w-full max-w-5xl">
+            <NewsCarousel news={news.items} ticker={news.ticker} />
+          </div>
+        )}
+        
         {timestamp && (
           <span className="text-xs text-muted-foreground px-2">{timestamp}</span>
         )}

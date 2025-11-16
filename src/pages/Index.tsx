@@ -17,6 +17,14 @@ interface NewsItem {
   url?: string;
 }
 
+interface ChartData {
+  ticker: string;
+  data: Array<{ time: string; value: number }>;
+  currentPrice: number;
+  change: number;
+  changePercent: number;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -26,6 +34,7 @@ interface Message {
     ticker: string;
     items: NewsItem[];
   };
+  chart?: ChartData;
 }
 
 const Index = () => {
@@ -48,12 +57,53 @@ const Index = () => {
 
     setMessages((prev) => [...prev, newMessage]);
 
-    // Simulate AI response with news
+    // Simulate AI response with chart and/or news
     setTimeout(() => {
       const lowerContent = content.toLowerCase();
       const hasNewsQuery = lowerContent.includes("news") || lowerContent.includes("latest");
+      const hasChartQuery = lowerContent.includes("chart") || lowerContent.includes("price") || lowerContent.includes("stock");
       
-      if (hasNewsQuery) {
+      if (hasChartQuery) {
+        // Generate dummy chart data
+        const generateChartData = () => {
+          const data = [];
+          const basePrice = 250;
+          const now = Math.floor(Date.now() / 1000);
+          const oneDay = 86400;
+          
+          for (let i = 30; i >= 0; i--) {
+            const time = now - (i * oneDay);
+            const randomChange = (Math.random() - 0.5) * 20;
+            const value = basePrice + randomChange + (30 - i) * 2;
+            data.push({
+              time: new Date(time * 1000).toISOString().split('T')[0],
+              value: parseFloat(value.toFixed(2))
+            });
+          }
+          return data;
+        };
+
+        const chartData = generateChartData();
+        const currentPrice = chartData[chartData.length - 1].value;
+        const previousPrice = chartData[chartData.length - 2].value;
+        const change = currentPrice - previousPrice;
+        const changePercent = (change / previousPrice) * 100;
+
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "Here's the latest price chart for TSLA. The stock is currently showing strong momentum with increased trading volume.",
+          timestamp: "Just now",
+          chart: {
+            ticker: "TSLA",
+            data: chartData,
+            currentPrice,
+            change,
+            changePercent
+          }
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+      } else if (hasNewsQuery) {
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
@@ -165,6 +215,7 @@ const Index = () => {
                       content={message.content}
                       timestamp={message.timestamp}
                       news={message.news}
+                      chart={message.chart}
                     />
                   ))
                 )}

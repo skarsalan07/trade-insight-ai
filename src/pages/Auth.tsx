@@ -71,6 +71,10 @@ const Auth = () => {
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/`,
+          // Add this line to force the account prompt
+          queryParams: {
+            prompt: 'select_account',
+          }
         },
       });
 

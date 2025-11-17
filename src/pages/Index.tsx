@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Session } from "@supabase/supabase-js";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TradingSidebar } from "@/components/TradingSidebar";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 
 interface NewsItem {
   id: string;
@@ -38,6 +41,9 @@ interface Message {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -46,6 +52,29 @@ const Index = () => {
       timestamp: "Just now",
     },
   ]);
+
+  useEffect(() => {
+    // Check authentication
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setSession(session);
+      }
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setSession(session);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleSendMessage = (content: string) => {
     const newMessage: Message = {
@@ -114,52 +143,42 @@ const Index = () => {
             items: [
               {
                 id: "1",
-                title: "Tesla Announces Record Q4 Deliveries, Beating Analyst Expectations",
-                source: "Bloomberg",
+                title: "Tesla Announces Record Q4 Deliveries",
+                source: "Reuters",
                 timestamp: "2 hours ago",
                 sentiment: "positive",
                 impact: "high",
-                summary: "Tesla reported record quarterly deliveries, surpassing Wall Street estimates. Strong demand in China and Europe drove the numbers higher, signaling robust growth momentum.",
+                summary: "Tesla reported record-breaking deliveries in Q4, exceeding analyst expectations by 15%. This strong performance indicates robust demand and efficient production scaling.",
                 url: "#"
               },
               {
                 id: "2",
-                title: "Musk's Twitter Acquisition Raises Concerns About Tesla Focus",
-                source: "Reuters",
+                title: "New Gigafactory Construction Begins in Southeast Asia",
+                source: "Bloomberg",
                 timestamp: "5 hours ago",
-                sentiment: "negative",
+                sentiment: "positive",
                 impact: "medium",
-                summary: "Investors express concerns about Elon Musk's divided attention between Tesla and Twitter operations. Some analysts downgrade ratings citing leadership distraction risks.",
+                summary: "Tesla breaks ground on new manufacturing facility, expected to increase production capacity by 20% and reduce shipping costs to Asian markets.",
                 url: "#"
               },
               {
                 id: "3",
-                title: "Tesla Opens New Gigafactory in Texas, Production Ramps Up",
-                source: "CNBC",
-                timestamp: "8 hours ago",
-                sentiment: "positive",
-                impact: "high",
-                summary: "The new Austin facility begins production of Cybertruck models. The expansion is expected to significantly increase manufacturing capacity and reduce delivery times.",
+                title: "Regulatory Concerns Over Autopilot Features",
+                source: "Financial Times",
+                timestamp: "1 day ago",
+                sentiment: "negative",
+                impact: "medium",
+                summary: "Federal regulators announce expanded investigation into Tesla's autonomous driving features following recent incidents. May impact future rollout plans.",
                 url: "#"
               },
               {
                 id: "4",
-                title: "EV Market Competition Intensifies as Traditional Automakers Launch New Models",
-                source: "Wall Street Journal",
-                timestamp: "12 hours ago",
-                sentiment: "neutral",
-                impact: "medium",
-                summary: "Ford, GM, and Volkswagen unveil competitive electric vehicle lineups. Market analysts suggest increased competition could pressure Tesla's market share.",
-                url: "#"
-              },
-              {
-                id: "5",
-                title: "Tesla Stock Sees Volatility Amid Federal Reserve Rate Decision",
-                source: "Financial Times",
-                timestamp: "1 day ago",
-                sentiment: "neutral",
-                impact: "low",
-                summary: "Growth stocks including Tesla experience intraday volatility following Fed's interest rate announcement. Broader market sentiment affects tech and EV sectors.",
+                title: "Major Investment in Battery Technology",
+                source: "TechCrunch",
+                timestamp: "2 days ago",
+                sentiment: "positive",
+                impact: "high",
+                summary: "Tesla unveils breakthrough in battery efficiency, promising 40% cost reduction and extended vehicle range. Industry experts call it a 'game changer'.",
                 url: "#"
               }
             ]
@@ -170,7 +189,7 @@ const Index = () => {
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "I'm a demo AI assistant. In production, I would analyze your query and provide insights about stocks, market data, news, and trading recommendations using real-time data and advanced AI models. Try asking about 'latest news for TSLA' to see the news carousel!",
+          content: "I'm analyzing market data for your query. I can help you with stock prices, news analysis, portfolio recommendations, and market trends. Try asking about specific stocks or request the latest news!",
           timestamp: "Just now",
         };
         setMessages((prev) => [...prev, aiResponse]);
@@ -178,54 +197,54 @@ const Index = () => {
     }, 1000);
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background-secondary to-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <TradingSidebar />
+      <div className="flex h-screen w-full bg-gradient-to-br from-background via-background-secondary to-background">
+        <TradingSidebar onSignOut={handleSignOut} userEmail={session.user.email || ""} />
         
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="h-16 border-b border-border/50 glass-effect flex items-center px-6 gap-4">
-            <SidebarTrigger className="hover:bg-sidebar-accent/50 transition-colors" />
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <div className="border-b border-border/50 glass-effect p-4 flex items-center gap-4">
+            <SidebarTrigger className="lg:hidden" />
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary animate-glow" />
-              <h1 className="text-lg font-semibold">AI Trading Assistant</h1>
+              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+              <h1 className="text-lg font-semibold gradient-text">AI Trading Assistant</h1>
             </div>
-          </header>
-
-          {/* Chat Area */}
-          <div className="flex-1 flex flex-col">
-            <ScrollArea className="flex-1">
-              <div className="max-w-4xl mx-auto py-8">
-                {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4 py-20">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-glow">
-                      <Sparkles className="h-8 w-8 text-primary-foreground" />
-                    </div>
-                    <h2 className="text-2xl font-bold">Start a conversation</h2>
-                    <p className="text-muted-foreground max-w-md">
-                      Ask about stock analysis, market trends, portfolio optimization, or any trading-related questions.
-                    </p>
-                  </div>
-                ) : (
-                  messages.map((message) => (
-                    <ChatMessage
-                      key={message.id}
-                      role={message.role}
-                      content={message.content}
-                      timestamp={message.timestamp}
-                      news={message.news}
-                      chart={message.chart}
-                    />
-                  ))
-                )}
-              </div>
-            </ScrollArea>
-
-            {/* Input */}
-            <ChatInput onSend={handleSendMessage} />
           </div>
-        </div>
+
+          <ScrollArea className="flex-1 p-4 md:p-6">
+            <div className="max-w-4xl mx-auto space-y-6">
+              {messages.map((message) => (
+                <ChatMessage
+                  key={message.id}
+                  role={message.role}
+                  content={message.content}
+                  timestamp={message.timestamp}
+                  news={message.news}
+                  chart={message.chart}
+                />
+              ))}
+            </div>
+          </ScrollArea>
+
+          <ChatInput onSend={handleSendMessage} />
+        </main>
       </div>
     </SidebarProvider>
   );

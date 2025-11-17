@@ -1,4 +1,4 @@
-import { MessageSquarePlus, TrendingUp, Settings, User } from "lucide-react";
+import { MessageSquarePlus, TrendingUp, Settings, User, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -14,6 +14,19 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+interface TradingSidebarProps {
+  onSignOut: () => void;
+  userEmail: string;
+}
 
 const mockChatSessions = [
   { id: "1", title: "AAPL Stock Analysis", timestamp: "2 hours ago" },
@@ -23,7 +36,7 @@ const mockChatSessions = [
   { id: "5", title: "Crypto Market Overview", timestamp: "1 week ago" },
 ];
 
-export function TradingSidebar() {
+export function TradingSidebar({ onSignOut, userEmail }: TradingSidebarProps) {
   return (
     <Sidebar className="border-r border-border/50 glass-effect">
       <SidebarHeader className="p-4 border-b border-border/50">
@@ -69,20 +82,27 @@ export function TradingSidebar() {
       <SidebarFooter className="border-t border-border/50 p-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="hover:bg-sidebar-accent/50">
-              <button className="w-full flex items-center gap-3">
-                <User className="h-4 w-4" />
-                <span>Profile</span>
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="hover:bg-sidebar-accent/50">
-              <button className="w-full flex items-center gap-3">
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </button>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton className="hover:bg-sidebar-accent/50">
+                  <User className="h-4 w-4" />
+                  <span className="truncate">{userEmail}</span>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onSignOut} className="text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
